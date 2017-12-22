@@ -1,0 +1,11 @@
+{
+    "plugins": [
+        [
+            "transform-omodule-namespace",
+            {
+                "rootPath": "./src",
+                "namespacePrefix": "/om"
+            }
+        ]
+    ]
+}

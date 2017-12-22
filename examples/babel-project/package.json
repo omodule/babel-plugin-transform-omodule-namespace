@@ -1,0 +1,19 @@
+{
+  "name": "pure-babel-project",
+  "version": "0.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "rimraf dist && babel src -d dist"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "app-root-path": "^2.0.1",
+    "babel-cli": "^6.26.0",
+    "babel-plugin-transform-dirname-filename": "^1.1.0",
+    "babel-plugin-transform-omodule-namespace": "^0.3.5",
+    "rimraf": "^2.6.2"
+  }
+}
