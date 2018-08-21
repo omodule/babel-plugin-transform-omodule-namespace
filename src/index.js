@@ -1,41 +1,10 @@
 import path from 'path'
 import fs from 'fs'
 import appRoot from 'app-root-path'
-import { walk } from 'estree-walker'
 
 const projectRootPath = appRoot.path
 const OMODULE_CHILDREN_FOLDERNAME = 'omodules'
 const SEPARATOR = '/'
-
-// function `uses` and `inject` learnd from 'babel-plugin-transform-dirname-filename'
-// ^_^
-// https://github.com/TooTallNate/babel-plugin-transform-dirname-filename/blob/master/index.js
-// function uses(prog, variables) {
-//     const results = variables.reduce(function(o, name) {
-//         o[name] = false
-//         return o
-//     }, {})
-//
-//     walk(prog.scope.block, {
-//         enter: function(node) {
-//             if ('Identifier' === node.type) {
-//                 if (node.name in results) {
-//                     results[node.name] = true
-//                 }
-//             }
-//         }
-//     })
-//
-//     return results
-// }
-
-// function inject(t, prog, variable, value) {
-//     const ident = t.identifier(variable)
-//     const string = t.stringLiteral(value)
-//     const declarator = t.variableDeclarator(ident, string)
-//     const declaration = t.variableDeclaration('var', [declarator])
-//     prog.scope.block.body.unshift(declaration)
-// }
 
 function isAbsolutePath(p) {
     return path.isAbsolute(p)
@@ -94,9 +63,19 @@ function getOFilePath(matchRootPath, absoluteFilename) {
     return absoluteFilename.replace(matchRootPath + path.sep, '')
 }
 
+let done__onamespace = false
+let done__ofilepath = false
+
 export default function({ types: t }) {
+
     return {
         visitor: {
+            Program: {
+                enter() {
+                    done__onamespace = false
+                    done__ofilepath = false
+                }
+            },
             Identifier: (babelPath, state) => {
                 const { rootPath, namespacePrefix = '' } = state.opts
                 let absoluteRootPath
@@ -115,16 +94,27 @@ export default function({ types: t }) {
                 const matchRootPath = path.normalize(absoluteRootPath).replace(/[\\\/]+$/, '')
 
                 if (absoluteFilename.indexOf(absoluteRootPath) > -1) {
-                    if (babelPath.node.name === '__onamespace') {
+                    if (babelPath.node.name === '__onamespace' && !done__onamespace) {
                         const s = getONamesapce(matchRootPath, absoluteFilename, namespacePrefix)
-                        babelPath.replaceWith(t.stringLiteral(s));
+                        const prog = babelPath.find(path => path.isProgram())
+                        const ident = t.identifier('__onamespace')
+                        const string = t.stringLiteral(s)
+                        const declarator = t.variableDeclarator(ident, string)
+                        const declaration = t.variableDeclaration('var', [declarator])
+                        prog.scope.block.body.unshift(declaration)
+                        done__onamespace = true
                     }
-                    if (babelPath.node.name === '__ofilepath') {
+                    if (babelPath.node.name === '__ofilepath' && !done__ofilepath) {
                         const s = getOFilePath(matchRootPath, absoluteFilename)
-                        babelPath.replaceWith(t.stringLiteral(s));
+                        const prog = babelPath.find(path => path.isProgram())
+                        const ident = t.identifier('__ofilepath')
+                        const string = t.stringLiteral(s)
+                        const declarator = t.variableDeclarator(ident, string)
+                        const declaration = t.variableDeclaration('var', [declarator])
+                        prog.scope.block.body.unshift(declaration)
+                        done__ofilepath = true
                     }
                 }
-
             }
         }
     }
